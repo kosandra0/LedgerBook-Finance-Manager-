@@ -32,7 +32,9 @@ In **System > Data & Backup**, choose "Choose app folder & connect" and select t
 
 ## Privacy
 
-This repository is private. Your financial data is not stored in this repository. The HTML file contains only the application code.
+The app runs entirely in your browser and makes no network connections. The GitHub Pages site serves the same file.
+
+Your financial data is not stored in this repository. The HTML file contains only the application code.
 
 ## License
 

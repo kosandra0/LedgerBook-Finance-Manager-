@@ -11,7 +11,7 @@ LedgerBook is a private, local-first personal finance ledger delivered as a sing
 You can use LedgerBook directly in your browser, or download the standalone HTML file:
 
 1. **[Open LedgerBook in your browser](https://kosandra0.github.io/LedgerBook-Finance-Manager-/)** to use the hosted version.
-2. Download **Ledgerbook_Enhanced_v1.7.1.html** from this repository to use it locally.
+2. Download [`Ledgerbook_Enhanced_v1.7.1.html`](Ledgerbook_Enhanced_v1.7.1.html) from this repository to use it locally.
 3. Open the downloaded file in a current version of Chrome or Edge.
 4. For each copy, use the same browser profile and the same file location or website origin each time.
 
@@ -43,12 +43,13 @@ Make a full JSON backup before replacing the application file, and keep a second
 
 | Path | Purpose |
 |---|---|
-| **index.html** | Canonical hosted entry point (for example, GitHub Pages). |
-| **Ledgerbook_Enhanced_v1.7.1.html** | Version-labelled download for release 1.7.1. It must remain byte-for-byte identical to index.html. |
-| **scripts/verify-release.mjs** | Dependency-free check for version and release-file consistency. |
-| **.github/workflows/verify.yml** | Runs the release consistency check on pushes and pull requests. |
-| **docs/PROJECT_STRUCTURE.md** | Project layout and release-maintenance notes. |
-| **CONTRIBUTING.md** | Safe change and manual verification checklist. |
+| [`index.html`](index.html) | Canonical hosted entry point (for example, GitHub Pages). |
+| [`Ledgerbook_Enhanced_v1.7.1.html`](Ledgerbook_Enhanced_v1.7.1.html) | Version-labelled download for release 1.7.1. It must remain byte-for-byte identical to [`index.html`](index.html). |
+| [`scripts/verify-release.mjs`](scripts/verify-release.mjs) | Dependency-free check for version and release-file consistency. |
+| [`.github/workflows/verify.yml`](.github/workflows/verify.yml) | Runs the release consistency check on pushes and pull requests. |
+| [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) | Project layout and release-maintenance notes. |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Safe change and manual verification checklist. |
+| [`LICENSE`](LICENSE) | Apache License 2.0. |
 
 The two HTML files are intentionally kept at the repository root: one is the stable hosted entry point, and the other is an obvious, version-specific download. Git stores their identical contents efficiently as the same underlying blob.
 
@@ -60,8 +61,8 @@ With Node.js 24 or newer, run:
 
     node scripts/verify-release.mjs
 
-The check confirms that the HTML version metadata matches the versioned download, both files are byte-identical, and the restrictive Content Security Policy is present. It does not replace a browser-based regression test; see **CONTRIBUTING.md**.
+The [release verification script](scripts/verify-release.mjs) confirms that the HTML version metadata matches the versioned download, both files are byte-identical, and the restrictive Content Security Policy is present. It does not replace a browser-based regression test; see the [contribution guide](CONTRIBUTING.md).
 
 ## License
 
-Apache License 2.0. See **LICENSE**.
+[Apache License 2.0](LICENSE).

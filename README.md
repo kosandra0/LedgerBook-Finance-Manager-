@@ -4,13 +4,18 @@ LedgerBook is a private, local-first personal finance ledger delivered as a sing
 
 **Current release:** 1.7.1 · **License:** Apache-2.0 · **Format:** single-file HTML application
 
+🌐 **[Browse LedgerBook online](https://kosandra0.github.io/LedgerBook-Finance-Manager-/)**
+
 ## Start using LedgerBook
 
-1. Download **Ledgerbook_Enhanced_v1.7.1.html** from this repository, or open **index.html** through the hosted site.
-2. Open the file in a current version of Chrome or Edge.
-3. Use the same browser profile and the same file location or website origin each time.
+You can use LedgerBook directly in your browser, or download the standalone HTML file:
 
-No package installation, server, account, or internet connection is required for normal use.
+1. **[Open LedgerBook in your browser](https://kosandra0.github.io/LedgerBook-Finance-Manager-/)** to use the hosted version.
+2. Download **Ledgerbook_Enhanced_v1.7.1.html** from this repository to use it locally.
+3. Open the downloaded file in a current version of Chrome or Edge.
+4. For each copy, use the same browser profile and the same file location or website origin each time.
+
+No package installation, server, or account is required for normal use. The hosted version does require an internet connection to load the page; after it has loaded, the application is designed to work locally without remote services.
 
 **Important storage detail:** records are stored in the browser's IndexedDB database, **LedgerbookDB**. Browser profiles and origins are isolated from one another. Opening the local file and opening the hosted website can therefore show different databases. Clearing browser/site data or changing browser profiles can also make existing records unavailable.
 

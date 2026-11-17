@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Ledgerbook — Personal Finance Database</title>
-<meta name="application-version" content="1.7.1">
+<meta name="application-version" content="1.9.0">
 <style>
 :root{--bg:#f5f3ee;--surface:#fff;--surface2:#faf9f6;--ink:#22252a;--muted:#6a6e75;--faint:#9a9da3;--line:#e3dfd6;--line2:#eeebe4;--accent:#2b4a6f;--accent-ink:#fff;--inc:#2d7556;--exp:#a4443a;--sav:#2b5d86;--warn:#946512;--inc-bg:#e8f1ec;--exp-bg:#f6e9e7;--warn-bg:#f7efdc;--sel:#eef2f7;--rp:.45rem;--font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 [data-theme=dark]{--bg:#181a1d;--surface:#202327;--surface2:#1c1f22;--ink:#e6e6e3;--muted:#9a9ea5;--faint:#6f737a;--line:#31353a;--line2:#292c30;--accent:#8fb0d6;--accent-ink:#13181e;--inc:#6fbf9a;--exp:#e08a80;--sav:#85b2dc;--warn:#d9b062;--inc-bg:#1f2e27;--exp-bg:#33231f;--warn-bg:#352d1b;--sel:#262c33}
@@ -474,6 +474,123 @@ html[data-theme="dark"] input[type="date"],html[data-theme="dark"] input[type="t
 @media(max-width:560px){.dtp-panel{width:min(310px,calc(100vw - 24px))}.allocation-row{grid-template-columns:minmax(0,1fr) minmax(95px,.8fr) auto;gap:.35rem;padding:.45rem}.allocation-row .lb{font-size:.68rem}}
 @media(prefers-reduced-motion:reduce){.dtp-panel{animation:none!important}}
 
+/* ======================================================================
+   v1.9.0 — Motion system v3: smooth, calm, organised
+   1. Motion tokens. NOTE: earlier releases used var(--ease-out) without ever defining it,
+      which made those animations/transitions invalid (silently dropped). Defined here.
+   2. Everything below is covered by the reduced-motion rules (OS setting and body.rm).
+   ====================================================================== */
+:root{
+ --ease-out:cubic-bezier(.22,.8,.24,1);
+ --ease-in:cubic-bezier(.5,0,.9,.6);
+ --ease-soft:cubic-bezier(.4,.14,.3,1);
+ --ease-spring:cubic-bezier(.34,1.36,.5,1);
+ --d-fast:.14s;--d-base:.26s;--d-slow:.5s;
+}
+@keyframes page-fade{from{opacity:0}to{opacity:1}}
+@keyframes row-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes bar-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes line-draw{from{stroke-dasharray:var(--len,1200);stroke-dashoffset:var(--len,1200)}to{stroke-dasharray:var(--len,1200);stroke-dashoffset:0}}
+@keyframes dot-in{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+@keyframes donut-in{from{opacity:0;transform:rotate(-38deg) scale(.93)}to{opacity:1;transform:none}}
+@keyframes legend-in{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes breathe{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes save-pop{from{opacity:.2;transform:translateY(3px)}to{opacity:1;transform:none}}
+@keyframes toast-timer{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@keyframes top-in{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes nav-in{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+@keyframes cal-next{from{opacity:.15;transform:translateX(16px)}to{opacity:1;transform:none}}
+@keyframes cal-prev{from{opacity:.15;transform:translateX(-16px)}to{opacity:1;transform:none}}
+@keyframes cell-pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+
+/* Sliding navigation pill: one highlight glides between items (placed by NavPill in JS) */
+#nav{position:relative}
+.nav-pill{position:absolute;z-index:0;left:0;top:0;width:0;height:0;border-radius:6px;background:var(--sel);box-shadow:inset 2px 0 0 var(--accent);pointer-events:none;opacity:0;
+ transition:transform .42s var(--ease-out),width .3s var(--ease-out),height .3s var(--ease-out),opacity .25s ease}
+.nav-pill.ready{opacity:1}
+.nav-pill.noanim{transition:none}
+#nav.has-pill a.nl{z-index:1}
+#nav.has-pill a.nl.on{background:transparent;box-shadow:none}
+#nav.has-pill a.nl.on::after{transform:scaleY(0)}
+#nav a.nl{animation:nav-in .5s var(--ease-out) backwards;animation-delay:calc(var(--i,0)*24ms + 120ms)}
+#nav .ng{animation:page-fade .6s ease-out backwards}
+
+/* App shell */
+#app:not([hidden]) .top{animation:top-in .55s var(--ease-out) backwards}
+
+/* Page leave (view fades out briefly before the next page arrives; see App.render) */
+#view.route-leave{opacity:0;transform:translateY(4px);transition:opacity .11s var(--ease-in),transform .11s var(--ease-in);pointer-events:none}
+/* Entrance is calm: wrappers fade only; cards, tiles and tables do the gentle rise */
+#view.route-enter>*{animation:page-fade .3s var(--ease-out) backwards}
+#view:not(.route-enter) .ph{animation:none}
+
+/* Tables: first rows settle in one after another */
+.grid tbody tr,.tbl tbody tr{animation:row-in .3s var(--ease-out) backwards}
+.grid tbody tr:nth-child(2),.tbl tbody tr:nth-child(2){animation-delay:.025s}
+.grid tbody tr:nth-child(3),.tbl tbody tr:nth-child(3){animation-delay:.05s}
+.grid tbody tr:nth-child(4),.tbl tbody tr:nth-child(4){animation-delay:.075s}
+.grid tbody tr:nth-child(5),.tbl tbody tr:nth-child(5){animation-delay:.1s}
+.grid tbody tr:nth-child(6),.tbl tbody tr:nth-child(6){animation-delay:.125s}
+.grid tbody tr:nth-child(7),.tbl tbody tr:nth-child(7){animation-delay:.15s}
+.grid tbody tr:nth-child(8),.tbl tbody tr:nth-child(8){animation-delay:.175s}
+.grid tbody tr:nth-child(n+9),.tbl tbody tr:nth-child(n+9){animation-delay:.2s}
+
+/* Charts reveal once per page visit (Charts.fx marks redraws such as window resize with .nofx) */
+#view.route-enter .chart:not(.nofx)>svg rect{animation:bar-rise .7s var(--ease-out) backwards}
+#view.route-enter .chart:not(.nofx)>svg path[stroke-width="2"]{animation:line-draw 1.1s var(--ease-out) .12s backwards}
+#view.route-enter .chart:not(.nofx)>svg circle{animation:dot-in .45s var(--ease-spring) .85s backwards;transform-box:fill-box;transform-origin:center}
+#view.route-enter .chart:not(.nofx) .donut svg{animation:donut-in .8s var(--ease-out) backwards}
+#view.route-enter .chart:not(.nofx) .dl div{animation:legend-in .5s var(--ease-out) backwards}
+#view.route-enter .chart:not(.nofx) .dl div:nth-child(2){animation-delay:.06s}
+#view.route-enter .chart:not(.nofx) .dl div:nth-child(3){animation-delay:.12s}
+#view.route-enter .chart:not(.nofx) .dl div:nth-child(4){animation-delay:.18s}
+#view.route-enter .chart:not(.nofx) .dl div:nth-child(5){animation-delay:.24s}
+#view.route-enter .chart:not(.nofx) .dl div:nth-child(n+6){animation-delay:.3s}
+#view.route-enter .hb .row{animation:legend-in .5s var(--ease-out) backwards}
+#view.route-enter .hb .row:nth-child(2){animation-delay:.05s}
+#view.route-enter .hb .row:nth-child(3){animation-delay:.1s}
+#view.route-enter .hb .row:nth-child(4){animation-delay:.15s}
+#view.route-enter .hb .row:nth-child(n+5){animation-delay:.2s}
+
+/* Spending calendar: month glides in the direction of travel; selected day detail settles */
+.cal-grid.swap-next{animation:cal-next .42s var(--ease-out)}
+.cal-grid.swap-prev{animation:cal-prev .42s var(--ease-out)}
+.cal-detail.pulse{animation:fade-up .38s var(--ease-out)}
+.cal-day{transition:background-color .16s ease,border-color .16s ease,transform .16s var(--ease-out),box-shadow .2s ease}
+.cal-day:hover{transform:translateY(-1px)}
+.cal-day.selected{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent)}
+
+/* Dialogs, menus, backdrop, details */
+dialog::backdrop{backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+details[open]>*:not(summary){animation:fade-up .32s var(--ease-out)}
+details summary{transition:color .16s ease}
+details summary:hover{color:var(--ink)}
+
+/* Feedback: toasts show how long they stay; busy overlay has a soft spinner; save indicator settles */
+.toast{position:relative;overflow:hidden}
+.toast::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:currentColor;opacity:.32;transform-origin:left center;animation:toast-timer var(--ms,4500ms) linear forwards}
+.toast.out::after{animation:none;opacity:0}
+#busyMsg::before{content:"";display:inline-block;width:.95em;height:.95em;margin-right:.65rem;vertical-align:-.14em;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+.saveind.flash{animation:save-pop .5s var(--ease-out)}
+#boot .bx h2{animation:breathe 2.6s ease-in-out infinite}
+
+/* Controls: tactile but quiet */
+input[type=checkbox],input[type=radio]{transition:transform .14s var(--ease-spring)}
+input[type=checkbox]:active,input[type=radio]:active{transform:scale(.86)}
+.kpi:hover{transform:translateY(-2px)}
+.chip,.badge{transition:background-color .2s ease,color .2s ease}
+.lnk{transition:color .15s ease,opacity .15s ease}
+.dtp-day{transition:background-color .14s ease,border-color .14s ease,transform .14s var(--ease-out)}
+.dtp-day:hover{transform:scale(1.06)}
+.allocation-row{animation:fade-up .3s var(--ease-out) backwards}
+.theme-swatch.on{animation:cell-pop .3s var(--ease-spring)}
+
+/* Reduced motion: layers above never run; make sure leaving/entering states are visible */
+@media(prefers-reduced-motion:reduce){#view.route-leave{opacity:1;transform:none}.toast::after{display:none}}
+body.rm #view.route-leave{opacity:1;transform:none}
+body.rm .toast::after{display:none}
+
 </style>
 </head>
 <body data-density="normal">
@@ -509,7 +626,7 @@ html[data-theme="dark"] input[type="date"],html[data-theme="dark"] input[type="t
    ===================================================================== */
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const APP_VERSION='1.7.1';
+const APP_VERSION='1.9.0';
 const uid=()=>{if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();const b=new Uint8Array(16);crypto.getRandomValues(b);return[...b].map(x=>x.toString(16).padStart(2,'0')).join('')};
 const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}};
 const nowISO=()=>new Date().toISOString();
@@ -718,7 +835,7 @@ const Settings={
  async setMany(o){Object.assign(S,o);await DB.write(['settings'],tx=>{for(const[k,v]of Object.entries(o))tx.objectStore('settings').put({key:k,value:v})},true);Settings.apply()},
  fontStack(){if(S.fontCustom&&S.fontCustom.trim()){const n=S.fontCustom.replace(/[^\w \-]/g,'').trim();if(n)return`"${n}",${FONTS['System UI']}`}return FONTS[S.fontFamily]||FONTS['System UI']},
  apply(){const r=document.documentElement;r.style.setProperty('--font',Settings.fontStack());r.style.fontSize=(+S.fontSize||14)+'px';
-  const dark=S.theme==='dark'||(S.theme==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);const nt=dark?'dark':'light';if(r.dataset.theme&&r.dataset.theme!==nt){r.classList.add('theme-fade');clearTimeout(r._tf);r._tf=setTimeout(()=>r.classList.remove('theme-fade'),480)}r.dataset.theme=nt;ThemePalette.apply(r,dark);
+  const dark=S.theme==='dark'||(S.theme==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);const nt=dark?'dark':'light';if((r.dataset.theme&&r.dataset.theme!==nt)||(r.dataset.palette&&r.dataset.palette!==S.themePalette)){r.classList.add('theme-fade');clearTimeout(r._tf);r._tf=setTimeout(()=>r.classList.remove('theme-fade'),480)}r.dataset.theme=nt;ThemePalette.apply(r,dark);
   document.body.dataset.density=S.density;document.body.classList.toggle('rm',S.reducedMotion==='on');
   const tb=$('#themeBtn');if(tb){tb.textContent={light:'☀',dark:'☾'}[S.theme]||'◑';tb.title='Theme: '+({light:'Light',dark:'Dark'}[S.theme]||'Match system')+' (click to change)'}
   const c=$('#clock');if(c){c.hidden=!S.clockVisible}const lb=$('#lockBtn');if(lb)lb.hidden=!S.lock;if(typeof Clock!=='undefined')Clock.update(true)}
@@ -901,7 +1018,7 @@ const Notify={
   const dismiss=()=>{if(d.dataset.gone)return;d.dataset.gone='1';if(document.body.classList.contains('rm')||matchMedia('(prefers-reduced-motion:reduce)').matches){d.remove();return}d.classList.add('out');setTimeout(()=>d.remove(),200)};
   if(action){const b=document.createElement('button');b.className='lnk';b.textContent=action.label;b.onclick=()=>{dismiss();action.fn()};d.append(b)}
   const x=document.createElement('button');x.className='lnk';x.textContent='×';x.setAttribute('aria-label','Dismiss');x.onclick=dismiss;d.append(x);
-  box.append(d);if(ms)setTimeout(dismiss,ms);return d},
+  if(ms)d.style.setProperty('--ms',ms+'ms');box.append(d);if(ms)setTimeout(dismiss,ms);return d},
  ok:(m,o)=>Notify.toast(m,{kind:'ok',...o}),error:(m,o)=>Notify.toast(m,{kind:'error',ms:10000,...o}),
  banner(msg){const b=$('#banner');b.textContent=msg;b.hidden=!msg}
 };
@@ -985,6 +1102,10 @@ const Charts={
  col:{inc:'#2d7556',exp:'#a4443a',sav:'#2b5d86',warn:'#946512',mute:'#9a9da3'},
  mount(host,draw){host._draw=draw;Charts.live.add(host);draw()},
  empty(host,msg){host.innerHTML=`<div class="empty small">${esc(msg||'No data for this period.')}</div>`},
+ /* v1.9.0: prepare the reveal animation. First draw of a host animates; later redraws (window resize) stay still. */
+ fx(host){if(host._fxDone){host.classList.add('nofx');return}host._fxDone=1;
+  try{host.querySelectorAll(':scope>svg path[stroke-width="2"]').forEach(p=>{p.style.setProperty('--len',Math.ceil(p.getTotalLength()||1200))});
+   host.querySelectorAll(':scope>svg rect').forEach((r,i)=>{r.style.animationDelay=Math.min(i*16,380)+'ms'})}catch(_){}},
  nice(min,max,n=4){if(min>0)min=0;if(max<0)max=0;if(max===min)max=min+100;const span=max-min,s0=span/n,mag=Math.pow(10,Math.floor(Math.log10(s0))),nr=s0/mag,step=(nr<=1?1:nr<=2?2:nr<=5?5:10)*mag,lo=Math.floor(min/step)*step,hi=Math.ceil(max/step)*step,ticks=[];for(let v=lo;v<=hi+step/2;v+=step)ticks.push(Math.abs(v)<1e-9?0:v);return{lo,hi,ticks}},
  legend:s=>s.length>1?`<div class="legend">${s.map(x=>`<span><i style="background:${x.color}"></i>${esc(x.name)}</span>`).join('')}</div>`:'',
  frame(host,o,vals){const W=Math.max(host.clientWidth||600,260),H=o.height||220,L=54,R=10,T=10,B=24,sc=Charts.nice(Math.min(0,...vals),Math.max(0,...vals)),pw=W-L-R,ph=H-T-B,y=v=>T+ph-(v-sc.lo)/(sc.hi-sc.lo)*ph;
@@ -993,20 +1114,20 @@ const Charts={
   const fr=Charts.frame(host,o,all),n=o.labels.length,band=fr.pw/n,ns=o.series.length,bw=Math.max(2,Math.min(30,band*.8/ns)),step=Math.ceil(n/Math.max(1,Math.floor(fr.pw/56)));let g=fr.g;
   o.labels.forEach((lb,i)=>{const cx=fr.L+band*i+band/2;if(i%step===0)g+=`<text class="ax" x="${cx}" y="${fr.H-7}" text-anchor="middle">${esc(lb)}</text>`;
    o.series.forEach((s,j)=>{const v=s.data[i];if(!v)return;const x=cx-bw*ns/2+bw*j,y0=fr.y(0),y1=fr.y(v);g+=`<rect x="${x.toFixed(1)}" y="${Math.min(y0,y1).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1,Math.abs(y0-y1)).toFixed(1)}" style="fill:${v<0&&o.neg?o.neg:s.color}"><title>${esc(lb+' · '+s.name+': '+(o.fmt?o.fmt(v):Money.fmt(v)))}</title></rect>`})});
-  host.innerHTML=`<svg viewBox="0 0 ${fr.W} ${fr.H}" height="${fr.H}" role="img" aria-label="${esc(o.title||'Chart')}">${g}</svg>`+Charts.legend(o.series)})},
+  host.innerHTML=`<svg viewBox="0 0 ${fr.W} ${fr.H}" height="${fr.H}" role="img" aria-label="${esc(o.title||'Chart')}">${g}</svg>`+Charts.legend(o.series);Charts.fx(host)})},
  line(host,o){Charts.mount(host,()=>{const all=o.series.flatMap(s=>s.data.filter(v=>v!=null));if(!o.labels.length||!all.length||(!all.some(v=>v)&&!o.allowZero))return Charts.empty(host,o.empty);
   const fr=Charts.frame(host,o,all),n=o.labels.length,x=i=>n===1?fr.L+fr.pw/2:fr.L+fr.pw*i/(n-1),step=Math.ceil(n/Math.max(1,Math.floor(fr.pw/56)));let g=fr.g;
   o.labels.forEach((lb,i)=>{if(i%step===0)g+=`<text class="ax" x="${x(i)}" y="${fr.H-7}" text-anchor="middle">${esc(lb)}</text>`});
   for(const s of o.series){let d='',pen=false;s.data.forEach((v,i)=>{if(v==null){pen=false;return}d+=(pen?'L':'M')+x(i).toFixed(1)+' '+fr.y(v).toFixed(1);pen=true});
    g+=`<path d="${d}" fill="none" style="stroke:${s.color}" stroke-width="2"/>`;
    s.data.forEach((v,i)=>{if(v!=null)g+=`<circle cx="${x(i).toFixed(1)}" cy="${fr.y(v).toFixed(1)}" r="${n>40?1.5:3}" style="fill:${s.color}"><title>${esc(o.labels[i]+' · '+s.name+': '+(o.fmt?o.fmt(v):Money.fmt(v)))}</title></circle>`})}
-  host.innerHTML=`<svg viewBox="0 0 ${fr.W} ${fr.H}" height="${fr.H}" role="img" aria-label="${esc(o.title||'Chart')}">${g}</svg>`+Charts.legend(o.series)})},
+  host.innerHTML=`<svg viewBox="0 0 ${fr.W} ${fr.H}" height="${fr.H}" role="img" aria-label="${esc(o.title||'Chart')}">${g}</svg>`+Charts.legend(o.series);Charts.fx(host)})},
  donut(host,o){Charts.mount(host,()=>{let items=o.items.filter(i=>i.value>0).sort((a,b)=>b.value-a.value);const total=sum(items,i=>i.value);if(!total)return Charts.empty(host,o.empty);
   if(items.length>8){const rest=items.slice(7);items=items.slice(0,7);items.push({label:'Other ('+rest.length+')',value:sum(rest,i=>i.value),color:'#9a9da3'})}
   const r=57,C=2*Math.PI*r;let off=0,g='',lg='';
   items.forEach((it,i)=>{const col=it.color||Charts.pal[i%Charts.pal.length],len=C*it.value/total;g+=`<circle cx="85" cy="85" r="${r}" fill="none" stroke="${col}" stroke-width="26" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 85 85)"><title>${esc(it.label+': '+Money.fmt(it.value)+' ('+(it.value/total*100).toFixed(1)+'%)')}</title></circle>`;off+=len;
    lg+=`<div><i style="background:${col}"></i><span class="n" title="${esc(it.label)}">${esc(it.label)}</span><span class="num">${Money.fmt(it.value)}</span><span class="muted xs" style="width:3.2em;text-align:right">${(it.value/total*100).toFixed(1)}%</span></div>`});
-  host.innerHTML=`<div class="donut"><svg viewBox="0 0 170 170" role="img" aria-label="${esc(o.title||'Breakdown')}">${g}<text class="ctr" x="85" y="83">${esc(Money.compact(total))}</text><text class="ax" x="85" y="98" text-anchor="middle">total</text></svg><div class="dl">${lg}</div></div>`})},
+  host.innerHTML=`<div class="donut"><svg viewBox="0 0 170 170" role="img" aria-label="${esc(o.title||'Breakdown')}">${g}<text class="ctr" x="85" y="83">${esc(Money.compact(total))}</text><text class="ax" x="85" y="98" text-anchor="middle">total</text></svg><div class="dl">${lg}</div></div>`;Charts.fx(host)})},
  hbars(host,o){const items=o.items.filter(i=>o.keepZero||i.value>0).slice(0,o.limit||10);if(!items.length)return Charts.empty(host,o.empty);const mx=Math.max(...items.map(i=>i.max||i.value))||1;
   host.innerHTML=`<div class="hb">${items.map((it,i)=>`<div class="row"><span class="nm" title="${esc(it.label)}">${esc(it.label)}</span><span class="tr"><b style="width:${Math.min(100,it.value/mx*100).toFixed(1)}%;background:${it.color||Charts.pal[i%Charts.pal.length]}"></b></span><span class="num">${o.fmt?o.fmt(it.value,it):Money.fmt(it.value)}</span></div>`).join('')}</div>`}
 };
@@ -1046,7 +1167,7 @@ const Cols={
   {id:'type',label:'Type',w:96,sv:t=>t.type,html:t=>`<span class="badge ${t.type==='income'?'inc':t.type==='expense'?'exp':'tr'}">${cap(t.type)}</span>`},
   {id:'description',label:'Description',w:250,sv:t=>t.description,html:t=>esc(t.description)||'<span class="muted">—</span>'},
   {id:'amount',label:'Amount',w:132,align:'r',sv:t=>t.baseAmount!=null?t.baseAmount:t.amount,html:amountHtml},
-  {id:'category',label:'Category',w:170,sv:t=>t.type==='transfer'?'':nm('categories',t.categoryId,''),html:t=>t.type==='transfer'?'<span class="muted">Transfer</span>':catHtml(t.categoryId,t.subcategoryId)},
+  {id:'category',label:'Category',w:170,sv:t=>t.type==='transfer'?'':nm('categories',t.categoryId,''),html:t=>t.type==='transfer'?'<span class="muted">Transfer</span>':t.type==='goal'?'<span class="muted">Savings goal</span>':catHtml(t.categoryId,t.subcategoryId)},
   {id:'subcategory',label:'Subcategory',w:130,hidden:true,sv:t=>nm('categories',t.subcategoryId,''),html:t=>esc(nm('categories',t.subcategoryId,''))||'<span class="muted">—</span>'},
   {id:'account',label:'Account',w:190,sv:t=>AccountDisplay.label(t),html:t=>`<span title="${esc(AccountDisplay.title(t))}">${esc(AccountDisplay.label(t))}</span>`},
   {id:'payment',label:'Payment Method',w:130,sv:t=>nm('paymentMethods',t.paymentMethodId,''),html:t=>esc(nm('paymentMethods',t.paymentMethodId,''))||'<span class="muted">—</span>'},
@@ -1092,7 +1213,7 @@ class TxTable{
    ${o.views?`<select data-a="views" aria-label="Saved views"></select><button class="btn" data-a="saveview">Save view</button>`:''}
    <button class="btn" data-a="cols">Columns</button><button class="btn" data-a="addcol">+ Add Column</button><span class="spacer"></span><button class="btn" data-a="export">Export</button></div>
   <div class="fpanel" ${this.st.open?'':'hidden'}>
-   ${'type' in this.fixed?'':`<label>Type${sel('type',[['income','Income'],['expense','Expense'],['transfer','Transfer']],'All types')}</label>`}
+   ${'type' in this.fixed?'':`<label>Type${sel('type',[['income','Income'],['expense','Expense'],['transfer','Transfer'],['goal','Savings goal']],'All types')}</label>`}
    <label>From date<input type="date" data-f="from" value="${esc('from' in this.fixed?this.fixed.from:f.from)}"${'from' in this.fixed?' disabled title="Set by the page period"':''}></label><label>To date<input type="date" data-f="to" value="${esc('to' in this.fixed?this.fixed.to:f.to)}"${'to' in this.fixed?' disabled title="Set by the page period"':''}></label>
    <label>Account${sel('accountId',State.accounts.map(a=>[a.id,a.name]),'All accounts')}</label>
    <label>Category${sel('categoryId',[...CatOpts.flat('expense',[f.categoryId]),...CatOpts.flat('income',[f.categoryId])].filter(x=>!('type' in this.fixed)||true),'All categories')}</label>
@@ -1136,7 +1257,7 @@ class TxTable{
   p.innerHTML=`<span>${n?`${(pg*ps+1).toLocaleString()}–${Math.min(n,pg*ps+ps).toLocaleString()} of ${n.toLocaleString()}`:'0 records'}</span><label>Rows <select data-a="ps">${[25,50,100,250,500].map(x=>`<option${x===ps?' selected':''}>${x}</option>`).join('')}</select></label><button class="btn sm" data-a="pg" data-p="0" ${pg?'':'disabled'}>« First</button><button class="btn sm" data-a="pg" data-p="${pg-1}" ${pg?'':'disabled'}>‹ Prev</button><span>Page ${pg+1} / ${pages}</span><button class="btn sm" data-a="pg" data-p="${pg+1}" ${pg<pages-1?'':'disabled'}>Next ›</button><button class="btn sm" data-a="pg" data-p="${pages-1}" ${pg<pages-1?'':'disabled'}>Last »</button>`}
  byId(id){return this.rows.find(r=>r.id===id)}
  selRows(){return this.rows.filter(r=>this.st.sel.has(r.id))}
- async del(ids){if(!await UI.confirm({title:'Delete transactions',html:`<p style="margin:0">Delete <b>${ids.length.toLocaleString()}</b> transaction${ids.length>1?'s':''}? Account balances and statistics will be recalculated. You can undo this right after, or restore from the trash in Data &amp; Backup.</p>`,confirm:'Delete',danger:true}))return;
+ async del(ids){const goalRows=ids.filter(i=>(this.byId(i)||{}).type==='goal');if(goalRows.length){Notify.error('Savings-goal entries cannot be deleted here. Reverse them from the goal’s History on the Savings page.');ids=ids.filter(i=>!goalRows.includes(i));if(!ids.length)return}if(!await UI.confirm({title:'Delete transactions',html:`<p style="margin:0">Delete <b>${ids.length.toLocaleString()}</b> transaction${ids.length>1?'s':''}? Account balances and statistics will be recalculated. You can undo this right after, or restore from the trash in Data &amp; Backup.</p>`,confirm:'Delete',danger:true}))return;
   const del=await TxService.remove(ids);this.st.sel.clear();Notify.toast(`${del.length} transaction(s) deleted`,{action:{label:'Undo',fn:async()=>{await TxService.undo(del);Notify.ok('Restored')}},ms:9000})}
  pickDialog(title,label,opts,apply){UI.dialog({title,body:F.f(label,F.sel('v',opts,opts[0]&&opts[0][0])),actions:[{label:'Cancel',run(){}},{label:'Apply to selected',primary:true,async run(c){await apply(c.read().v)}}]})}
  async onClick(e){const el=e.target.closest('[data-a],[data-rz],th[data-col]');if(!el)return;const a=el.dataset.a,st=this.st,tr=e.target.closest('tr');
@@ -1190,6 +1311,7 @@ function mountTxTable(host,ctx,fixed,opts){host.setAttribute('data-txtable','1')
 /* ---------- Transaction form ---------- */
 const TxForm={
  async open(t=null,preset={}){
+  if(t&&t.type==='goal'){Notify.error('Savings-goal entries are changed from the Savings page (History → Delete reverses an entry).');return}
   const dup=!!(preset&&preset.dup),isEdit=!!t&&!dup,accs=activeAccounts();
   if(!accs.length&&!isEdit){UI.dialog({title:'Create an account first',body:'<p style="margin:0">Transactions belong to an account. Create one (for example Cash or Bank Account) before recording transactions.</p>',actions:[{label:'Close',run(){}},{label:'Go to Accounts',primary:true,run(){location.hash='#/accounts'}}]});return}
   const d=t?clone(t):{type:preset.type||'expense',date:preset.date||Dt.today(),time:Dt.nowHM(),accountId:preset.accountId||(State.m.accounts.get(S.defaultAccount)&&State.m.accounts.get(S.defaultAccount).status!=='archived'?S.defaultAccount:accs[0].id),tags:[],custom:{}};
@@ -1281,11 +1403,13 @@ const TxForm={
    balance(acc) = opening + income − expense + transfers in − transfers out  (account currency)  */
 class Agg{
  constructor(){this.inc=0;this.exp=0;this.count=0;this.incN=0;this.expN=0;this.trN=0;this.acc=new Map();this.catInc=new Map();this.catExp=new Map();this.pay=new Map();this.payee=new Map();this.byDay=new Map();this.byMonth=new Map();this.byYear=new Map();this.topInc=[];this.topExp=[];this.min=null;this.max=null;this.maxExp=0;this.minExp=null}
- a(id){let x=this.acc.get(id);if(!x){x={inc:0,exp:0,tin:0,tout:0,incB:0,expB:0,n:0};this.acc.set(id,x)}return x}
+ a(id){let x=this.acc.get(id);if(!x){x={inc:0,exp:0,tin:0,tout:0,gin:0,gout:0,incB:0,expB:0,n:0};this.acc.set(id,x)}return x}
  static bump(map,id,b,sid){let e=map.get(id);if(!e){e={amt:0,n:0,subs:new Map()};map.set(id,e)}e.amt+=b;e.n++;if(sid)e.subs.set(sid,(e.subs.get(sid)||0)+b)}
  static top(list,t,b){if(list.length<10||b>list[list.length-1].amt){list.push({id:t.id,amt:b,date:t.date,description:t.description,categoryId:t.categoryId,payee:t.payee});list.sort((x,y)=>y.amt-x.amt);if(list.length>10)list.pop()}}
  add(t){this.count++;if(this.min===null||t.date<this.min)this.min=t.date;if(this.max===null||t.date>this.max)this.max=t.date;
   if(t.type==='transfer'){this.trN++;this.a(t.accountId).tout+=t.amount;this.a(t.toAccountId).tin+=(t.toAmount!=null?t.toAmount:t.amount);return}
+  /* v1.8.0: savings-goal movements change account balances only; they are neither income nor expenditure */
+  if(t.type==='goal'){this.goalN=(this.goalN||0)+1;const parts=(t.allocations||[]).length?t.allocations:[{accountId:t.accountId,amount:t.amount}];for(const part of parts){const a=this.a(part.accountId);a.n++;if(t.goalDir==='withdraw')a.gin+=part.amount;else a.gout+=part.amount}return}
   const b=t.baseAmount!=null?t.baseAmount:t.amount,ym=t.date.slice(0,7),y=t.date.slice(0,4);
   let m=this.byMonth.get(ym);if(!m){m={inc:0,exp:0,n:0};this.byMonth.set(ym,m)}let yy=this.byYear.get(y);if(!yy){yy={inc:0,exp:0};this.byYear.set(y,yy)}let dd=this.byDay.get(t.date);if(!dd){dd={inc:0,exp:0};this.byDay.set(t.date,dd)}m.n++;
   if(t.type==='income'){this.inc+=b;this.incN++;const allocations=(t.allocations||[]).length?t.allocations:[{accountId:t.accountId,amount:t.amount}];for(const part of allocations){const a=this.a(part.accountId);a.n++;a.inc+=part.amount;a.incB+=Math.round(part.amount*(t.fxRate||1))}m.inc+=b;yy.inc+=b;dd.inc+=b;Agg.bump(this.catInc,t.categoryId||'',b,t.subcategoryId);Agg.top(this.topInc,t,b)}
@@ -1300,7 +1424,7 @@ const Analytics={_c:new Map(),_v:-1,
 };
 const Calc={
  rate:(inc,exp)=>inc>0?(inc-exp)/inc*100:null,
- accountRows(ag){return State.accounts.map(ac=>{const x=ag.acc.get(ac.id)||{inc:0,exp:0,tin:0,tout:0,n:0};return{ac,inc:x.inc,exp:x.exp,tin:x.tin,tout:x.tout,n:x.n,balance:(ac.openingBalance||0)+x.inc-x.exp+x.tin-x.tout}})},
+ accountRows(ag){return State.accounts.map(ac=>{const x=ag.acc.get(ac.id)||{inc:0,exp:0,tin:0,tout:0,gin:0,gout:0,n:0};return{ac,inc:x.inc,exp:x.exp,tin:x.tin,tout:x.tout,gin:x.gin||0,gout:x.gout||0,n:x.n,balance:(ac.openingBalance||0)+x.inc-x.exp+x.tin-x.tout+(x.gin||0)-(x.gout||0)}})},
  netWorth(rows){let tot=0,missing=false;for(const r of rows){if(r.ac.status==='archived')continue;if(r.ac.currency!==S.currency&&!S.fxRates[r.ac.currency])missing=true;tot+=Math.round(r.balance*Money.rate(r.ac.currency))}return{tot,missing}},
  clampEnd(to){const t=Dt.today();return!to||to>t?t:to},
  avgDaily(exp,r,ag){const from=r.from||ag.min;if(!from)return 0;const to=Calc.clampEnd(r.to);const days=to<from?1:Dt.diffDays(from,to)+1;return Math.round(exp/days)},
@@ -1359,8 +1483,9 @@ PAGES.calendar=async(el,alive)=>{
  <div class="kpis" style="margin-bottom:.8rem">${UI.kpi('Income',Money.fmt(dayTotals.income),{tone:'inc'})}${UI.kpi('Expenditure',Money.fmt(dayTotals.expense),{tone:'exp'})}${UI.kpi('Net',Money.fmt(dayTotals.income-dayTotals.expense),{tone:dayTotals.income-dayTotals.expense<0?'exp':'sav'})}</div>
  ${dayRows.length?`<div class="tw"><table class="tbl cal-daylist"><thead><tr><th>Time</th><th>Type</th><th>Description</th><th>Account</th><th class="r">Amount</th><th></th></tr></thead><tbody>${dayRows.map(t=>`<tr data-cal-tx="${esc(t.id)}"><td>${esc(Dt.time(t.time||'00:00'))}</td><td><span class="badge ${t.type==='income'?'inc':t.type==='expense'?'exp':'tr'}">${esc(cap(t.type))}</span></td><td>${esc(t.description||'—')}${t.archived?' <span class="badge">Archived</span>':''}</td><td title="${esc(AccountDisplay.title(t))}">${esc(AccountDisplay.label(t))}</td><td class="r">${Money.fmt(t.amount,t.currency)}</td><td><button class="lnk" data-cal-edit="${esc(t.id)}">Edit</button></td></tr>`).join('')}</tbody></table></div>`:UI.empty('Nothing recorded on this day','Add income or an expense to start building your daily picture.')}
  </div>`;
- el.onclick=async e=>{const day=e.target.closest('[data-cal-day]');if(day){CalendarState.selected=day.dataset.calDay;App.refresh();return}const nav=e.target.closest('[data-cal]');if(nav){if(nav.dataset.cal==='today'){CalendarState.month=Dt.today().slice(0,7);CalendarState.selected=Dt.today()}else{const target=Dt.addMonths(first,nav.dataset.cal==='prev'?-1:1);const dayNum=Math.min(+CalendarState.selected.slice(8),+Dt.monthEnd(target).slice(8));CalendarState.month=target.slice(0,7);CalendarState.selected=target.slice(0,8)+Dt.pad(dayNum)}App.refresh();return}const add=e.target.closest('[data-cal-add]');if(add){await TxForm.open(null,{type:add.dataset.calAdd,date:CalendarState.selected});return}const edit=e.target.closest('[data-cal-edit]');if(edit){const t=await DB.get('transactions',edit.dataset.calEdit);if(t)TxForm.open(t);return}const tr=e.target.closest('[data-cal-tx]');if(tr&&!e.target.closest('button')){const t=await DB.get('transactions',tr.dataset.calTx);if(t)TxForm.open(t)}};
- el.onchange=e=>{if(e.target.matches('[data-cal-month]')){const v=e.target.value;if(/^\d{4}-\d{2}$/.test(v)){CalendarState.month=v;const max=Dt.monthEnd(v+'-01');if(CalendarState.selected.slice(0,7)!==v)CalendarState.selected=v+'-01';if(CalendarState.selected>max)CalendarState.selected=max;App.refresh()}}};
+ {const gridEl=$('.cal-grid',el),detEl=$('.cal-detail',el);if(CalendarState.swap&&gridEl)gridEl.classList.add('swap-'+CalendarState.swap);if(CalendarState.pulse&&detEl)detEl.classList.add('pulse');CalendarState.swap='';CalendarState.pulse=false}
+ el.onclick=async e=>{const day=e.target.closest('[data-cal-day]');if(day){CalendarState.selected=day.dataset.calDay;CalendarState.pulse=true;App.refresh();return}const nav=e.target.closest('[data-cal]');if(nav){CalendarState.swap=nav.dataset.cal==='prev'?'prev':'next';CalendarState.pulse=true;if(nav.dataset.cal==='today'){CalendarState.month=Dt.today().slice(0,7);CalendarState.selected=Dt.today()}else{const target=Dt.addMonths(first,nav.dataset.cal==='prev'?-1:1);const dayNum=Math.min(+CalendarState.selected.slice(8),+Dt.monthEnd(target).slice(8));CalendarState.month=target.slice(0,7);CalendarState.selected=target.slice(0,8)+Dt.pad(dayNum)}App.refresh();return}const add=e.target.closest('[data-cal-add]');if(add){await TxForm.open(null,{type:add.dataset.calAdd,date:CalendarState.selected});return}const edit=e.target.closest('[data-cal-edit]');if(edit){const t=await DB.get('transactions',edit.dataset.calEdit);if(t)TxForm.open(t);return}const tr=e.target.closest('[data-cal-tx]');if(tr&&!e.target.closest('button')){const t=await DB.get('transactions',tr.dataset.calTx);if(t)TxForm.open(t)}};
+ el.onchange=e=>{if(e.target.matches('[data-cal-month]')){const v=e.target.value;if(/^\d{4}-\d{2}$/.test(v)){CalendarState.swap='next';CalendarState.month=v;const max=Dt.monthEnd(v+'-01');if(CalendarState.selected.slice(0,7)!==v)CalendarState.selected=v+'-01';if(CalendarState.selected>max)CalendarState.selected=max;App.refresh()}}};
 };
 
 
@@ -1466,20 +1591,53 @@ const Goals={
   <div class="small muted" style="margin-top:.4rem">Remaining ${Money.fmt(rem)}${g.targetDate?` · target ${esc(Dt.disp(g.targetDate))}`:''}</div><div class="small" style="margin-top:.2rem">${Goals.needs(g)}</div>
   ${g.accountId&&State.m.accounts.get(g.accountId)?`<div class="xs muted" style="margin-top:.3rem">Earmarked within ${esc(nm('accounts',g.accountId))}${bal&&bal.over?` · <span class="warn">total earmarked (${Money.fmt(bal.earm)}) exceeds the account balance (${Money.fmt(bal.bal)})</span>`:''}</div>`:''}
   <div style="margin-top:.6rem;display:flex;gap:.4rem;flex-wrap:wrap"><button class="btn sm" data-ga="add">Contribute</button><button class="btn sm" data-ga="wd">Withdraw</button><button class="btn sm" data-ga="hist">History (${(g.contribs||[]).length})</button><button class="btn sm" data-ga="edit">Edit</button></div></div>`},
- async contribute(g,sign){const saved=Goals.saved(g);
-  UI.dialog({title:(sign>0?'Add contribution — ':'Record withdrawal — ')+g.name,body:`<div class="fg">${F.f('Amount *',F.inp('amount','','inputmode="decimal" required placeholder="0.00"'))}${F.f('Date *',F.inp('date',Dt.today(),'type="date" required'))}${F.f('Note',F.inp('note','','maxlength="200"'),{cls:'full'})}</div><p class="hint">Currently saved: ${Money.fmt(saved)}. Goal contributions are earmarks within your existing balances — they do not create income or move money between accounts.</p>`,
-   actions:[{label:'Cancel',run(){}},{label:sign>0?'Add contribution':'Record withdrawal',primary:true,async run(c){const f=c.read(),a=Money.parse(f.amount),E=[];if(isNaN(a)||a<=0)E.push({field:'amount',msg:'Enter an amount greater than zero.'});if(!Dt.valid(f.date))E.push({field:'date',msg:'Enter a valid date.'});if(sign<0&&a>saved)E.push({field:'amount',msg:'Withdrawal exceeds the amount saved ('+Money.fmt(saved)+').'});if(E.length){c.error(E);return false}
-    g.contribs=[...(g.contribs||[]),{id:uid(),date:f.date,amount:sign*a,note:f.note.trim().slice(0,200)}];await Repo.save('goals',g,'Goal '+(sign>0?'contribution':'withdrawal')+': '+g.name);Notify.ok(sign>0?'Contribution added':'Withdrawal recorded')}}]})},
+ /* v1.8.0: contributions take money FROM chosen accounts; withdrawals put money BACK INTO chosen accounts.
+    Each movement is one atomic write: a 'goal' transaction (shown in Transactions) plus the goal's history entry. */
+ async contribute(g,sign){const saved=Goals.saved(g),isIn=sign>0;
+  const rows=Calc.accountRows(await Analytics.period(null,null)).filter(r=>r.ac.status!=='archived'&&r.ac.currency===S.currency);
+  if(!rows.length){Notify.error('Add an active account in your base currency ('+S.currency+') first.');return}
+  const opts=rows.map(r=>[r.ac.id,r.ac.name+' — '+Money.fmt(r.balance,r.ac.currency)+(isIn?' available':' balance')]);
+  let parts=[{accountId:'',amount:''}],rowsEl=null,amtEl=null,sumEl=null;
+  const sync=()=>{if(!rowsEl)return;parts=[...rowsEl.querySelectorAll('.allocation-row')].map(row=>({accountId:row.querySelector('select').value,amount:row.querySelector('input').value.trim()}));
+   const total=Money.parse(amtEl.value),got=sum(parts,p=>{const n=Money.parse(p.amount);return isNaN(n)?0:n});
+   sumEl.innerHTML=`<span>${isIn?'Taken from':'Returned to'} <b>${Money.fmt(got,S.currency)}</b> of ${isNaN(total)?'—':Money.fmt(total,S.currency)}</span><b class="${!isNaN(total)&&total>0&&total===got?'ok':'bad'}">${isNaN(total)||total<=0?'Enter the amount':total===got?'Amounts match':'Difference: '+Money.fmt(total-got,S.currency)}</b>`};
+  const paint=()=>{rowsEl.innerHTML=parts.map((p,i)=>`<div class="allocation-row"><label class="f"><span class="lb">Account ${i+1}</span><select data-ac="${i}"><option value="">Select account…</option>${opts.map(([v,l])=>`<option value="${esc(v)}"${v===p.accountId?' selected':''}>${esc(l)}</option>`).join('')}</select></label><label class="f"><span class="lb">Amount</span><input inputmode="decimal" placeholder="0.00" value="${esc(p.amount)}"></label><button type="button" class="allocation-remove" data-rm="${i}" aria-label="Remove account ${i+1}" title="Remove">×</button></div>`).join('');sync()};
+  const c=UI.dialog({title:(isIn?'Contribute to ':'Withdraw from ')+g.name,wide:true,body:`<div class="fg">${F.f('Amount *',F.inp('amount','','inputmode="decimal" required placeholder="0.00"'))}${F.f('Date *',F.inp('date',Dt.today(),'type="date" required'))}${F.f('Note',F.inp('note','','maxlength="200"'),{cls:'full'})}</div>
+   <div class="f full" style="margin-top:.7rem"><span class="lb">${isIn?'Take the money from which account(s)?':'Put the money back into which account(s)?'}</span><div class="allocation-panel"><div class="allocation-rows" data-rows></div><div class="allocation-actions"><button type="button" class="btn" data-add>+ Add account</button><span class="hint">Each amount is ${isIn?'deducted from':'credited to'} that account.</span></div><div class="allocation-summary" data-sum></div></div></div>
+   <p class="hint">Currently saved: ${Money.fmt(saved)}. This moves real money between your accounts and this goal, and is recorded in the Transactions tab. It is not income or expenditure.</p>`,
+   onMount:cx=>{const fm=cx.form;rowsEl=$('[data-rows]',fm);amtEl=fm.elements.amount;sumEl=$('[data-sum]',fm);
+    fm.addEventListener('input',sync);fm.addEventListener('change',e=>{if(e.target.matches('select[data-ac]'))sync()});
+    fm.addEventListener('click',e=>{if(e.target.closest('[data-add]')){sync();parts.push({accountId:'',amount:''});paint();return}const rm=e.target.closest('[data-rm]');if(rm&&parts.length>1){sync();parts.splice(+rm.dataset.rm,1);paint()}});
+    paint()},
+   actions:[{label:'Cancel',run(){}},{label:isIn?'Contribute':'Withdraw',primary:true,async run(cx){sync();const f=cx.read(),E=[],a=Money.parse(f.amount);
+    if(isNaN(a)||a<=0)E.push({field:'amount',msg:'Enter an amount greater than zero.'});
+    if(!Dt.valid(f.date))E.push({field:'date',msg:'Enter a valid date.'});
+    if(!isIn&&!isNaN(a)&&a>saved)E.push({field:'amount',msg:'Withdrawal exceeds the amount saved ('+Money.fmt(saved)+').'});
+    const seen=new Set();let got=0;
+    parts.forEach((p,i)=>{const n=Money.parse(p.amount);if(!p.accountId)E.push({field:'amount',msg:`Choose an account for row ${i+1}.`});else if(seen.has(p.accountId))E.push({field:'amount',msg:'Choose each account only once.'});seen.add(p.accountId);if(isNaN(n)||n<=0)E.push({field:'amount',msg:`Enter an amount greater than zero for row ${i+1}.`});else got+=n});
+    if(!E.length&&got!==a)E.push({field:'amount',msg:`The account amounts add up to ${Money.fmt(got,S.currency)}; they must equal the total (${Money.fmt(a,S.currency)}).`});
+    if(!E.length&&isIn)for(const p of parts){const r=rows.find(x=>x.ac.id===p.accountId),n=Money.parse(p.amount);if(r&&r.ac.type!=='Credit Card'&&r.balance-n<0)E.push({field:'amount',msg:`${r.ac.name} has only ${Money.fmt(r.balance,S.currency)}, so it cannot give ${Money.fmt(n,S.currency)}.`})}
+    if(E.length){cx.error(E);return false}
+    const now=nowISO(),note=f.note.trim().slice(0,200),allocs=parts.map(p=>({accountId:p.accountId,amount:Money.parse(p.amount)})),txId=uid();
+    const movement={id:txId,type:'goal',goalDir:isIn?'contribute':'withdraw',goalId:g.id,date:f.date,time:'00:00',dt:f.date+' 00:00',amount:a,currency:S.currency,fxRate:1,baseAmount:a,accountId:allocs[0].accountId,toAccountId:'',categoryId:'',subcategoryId:'',paymentMethodId:'',tags:[],custom:{},allocations:allocs,description:(isIn?'Contribution to ':'Withdrawal from ')+g.name,payee:'',notes:note,reference:'',createdAt:now,updatedAt:now};
+    const rec={...g,contribs:[...(g.contribs||[]),{id:uid(),date:f.date,amount:sign*a,note,txId,allocs:allocs.map(x=>({accountId:x.accountId,amount:x.amount}))}],updatedAt:now};
+    await DB.write(['transactions','goals','audit'],t=>{t.objectStore('transactions').put(movement);t.objectStore('goals').put(rec);t.objectStore('audit').put(Audit.rec('goals',g.id,isIn?'contribute':'withdraw',`${isIn?'Contribution':'Withdrawal'} ${Money.fmt(a,S.currency)} ${isIn?'from':'to'} ${allocs.map(x=>nm('accounts',x.accountId)).join(', ')} · ${g.name}`))});
+    await State.reload('goals');Bus.changed();Notify.ok(isIn?'Contribution recorded and deducted from the selected account(s)':'Withdrawal recorded and credited to the selected account(s)')}}]})},
  history(g){const rows=[...(g.contribs||[])].sort((a,b)=>a.date<b.date?1:-1);
-  const c=UI.dialog({title:'Contribution history — '+g.name,wide:true,body:rows.length?`<div class="tw"><table class="tbl"><thead><tr><th>Date</th><th>Type</th><th class="r">Amount</th><th>Note</th><th></th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(Dt.disp(x.date))}</td><td>${x.amount>=0?'Contribution':'Withdrawal'}</td><td class="r ${x.amount>=0?'inc':'exp'}">${x.amount>=0?'+':'−'}${Money.fmt(Math.abs(x.amount))}</td><td>${esc(x.note||'')}</td><td class="r"><button class="lnk d" data-del="${esc(x.id)}">Delete</button></td></tr>`).join('')}</tbody></table></div>`:UI.empty('No contributions yet'),actions:[{label:'Close',primary:true,run(){}}]});
-  c.form.addEventListener('click',async e=>{const b=e.target.closest('[data-del]');if(!b)return;const rest=(g.contribs||[]).filter(x=>x.id!==b.dataset.del);if(sum(rest,x=>x.amount)<0){Notify.error('Removing this entry would make the saved amount negative.');return}if(!await UI.confirm({message:'Remove this entry from the history?',confirm:'Remove',danger:true}))return;g.contribs=rest;await Repo.save('goals',g,'Goal history edit: '+g.name);c.close();Goals.history(g)})},
+  const c=UI.dialog({title:'Contribution history — '+g.name,wide:true,body:rows.length?`<div class="tw"><table class="tbl"><thead><tr><th>Date</th><th>Type</th><th class="r">Amount</th><th>Account(s)</th><th>Note</th><th></th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(Dt.disp(x.date))}</td><td>${x.amount>=0?'Contribution':'Withdrawal'}${x.txId?'':' <span class="xs muted">(before v1.8.0)</span>'}</td><td class="r ${x.amount>=0?'inc':'exp'}">${x.amount>=0?'+':'−'}${Money.fmt(Math.abs(x.amount))}</td><td class="small">${x.allocs&&x.allocs.length?x.allocs.map(p=>`${esc(nm('accounts',p.accountId))} ${Money.fmt(p.amount)}`).join('<br>'):'<span class="muted">Not linked to an account</span>'}</td><td>${esc(x.note||'')}</td><td class="r"><button type="button" class="lnk d" data-del="${esc(x.id)}">Delete</button></td></tr>`).join('')}</tbody></table></div><p class="hint">Deleting an account-linked entry reverses it: money returns to (contribution) or leaves (withdrawal) the listed accounts.</p>`:UI.empty('No contributions yet'),actions:[{label:'Close',primary:true,run(){}}]});
+  c.form.addEventListener('click',async e=>{const b=e.target.closest('[data-del]');if(!b)return;const entry=(g.contribs||[]).find(x=>x.id===b.dataset.del);if(!entry)return;const rest=(g.contribs||[]).filter(x=>x.id!==entry.id);if(sum(rest,x=>x.amount)<0){Notify.error('Removing this entry would make the saved amount negative.');return}
+    if(entry.txId&&entry.amount<0){const bal=new Map(Calc.accountRows(await Analytics.period(null,null)).map(r=>[r.ac.id,r.balance]));for(const p of entry.allocs||[]){const ac=State.m.accounts.get(p.accountId);if(ac&&ac.type!=='Credit Card'&&(bal.get(p.accountId)||0)-p.amount<0){Notify.error(`Cannot reverse this withdrawal: ${ac.name} has since spent the money it received.`);return}}}
+    if(!await UI.confirm({message:entry.txId?'Reverse this entry? The money will '+(entry.amount>=0?'return to':'leave')+' the account(s) listed, and the movement will be removed from Transactions.':'Remove this entry from the history? (Entries made before v1.8.0 are not linked to any account.)',confirm:'Remove',danger:true}))return;
+    const now=nowISO(),rec={...g,contribs:rest,updatedAt:now};
+    await DB.write(['goals','transactions','audit'],t=>{t.objectStore('goals').put(rec);if(entry.txId)t.objectStore('transactions').delete(entry.txId);t.objectStore('audit').put(Audit.rec('goals',g.id,'reverse',`Reversed ${entry.amount>=0?'contribution':'withdrawal'} ${Money.fmt(Math.abs(entry.amount),S.currency)} · ${g.name}`))});
+    await State.reload('goals');Bus.changed();c.close();Notify.ok('Entry removed')})},
  form(g){const isNew=!g,d=g||{name:'',target:0,startDate:Dt.today(),targetDate:'',priority:'medium',status:'active',accountId:'',description:'',contribs:[]};
   UI.dialog({title:isNew?'New savings goal':'Edit goal',wide:true,body:`<div class="fg">${F.f('Goal name *',F.inp('name',d.name,'maxlength="80" required'))}${F.f('Target amount *',F.inp('target',d.target?Money.toInput(d.target):'','inputmode="decimal" required'))}${F.f('Starting date',F.inp('startDate',d.startDate,'type="date"'))}${F.f('Target date',F.inp('targetDate',d.targetDate||'','type="date"'))}${F.f('Priority',F.sel('priority',[['high','High'],['medium','Medium'],['low','Low']],d.priority))}${F.f('Status',F.sel('status',[['active','Active'],['paused','Paused'],['completed','Completed'],['archived','Archived']],d.status))}${F.f('Linked account (optional)',F.sel('accountId',[['','— None —'],...State.accounts.map(a=>[a.id,a.name])],d.accountId||''),{hint:'Marks which account holds the money. It does not move any funds.'})}${isNew?F.f('Amount already saved',F.inp('initial','','inputmode="decimal" placeholder="0.00"')):''}${F.f('Description',F.ta('description',d.description||''),{cls:'full'})}</div>`,
    actions:[{label:'Cancel',run(){}},{label:isNew?'Create goal':'Save goal',primary:true,async run(c){const f=c.read(),E=[],tg=Money.parse(f.target);if(!f.name.trim())E.push({field:'name',msg:'Enter a goal name.'});if(isNaN(tg)||tg<=0)E.push({field:'target',msg:'Target amount must be greater than zero.'});if(f.startDate&&!Dt.valid(f.startDate))E.push({field:'startDate',msg:'Invalid start date.'});if(f.targetDate&&!Dt.valid(f.targetDate))E.push({field:'targetDate',msg:'Invalid target date.'});if(f.startDate&&f.targetDate&&f.targetDate<f.startDate)E.push({field:'targetDate',msg:'Target date must be after the starting date.'});
     let ini=0;if(isNew&&f.initial){ini=Money.parse(f.initial);if(isNaN(ini)||ini<0)E.push({field:'initial',msg:'Enter a valid amount already saved.'})}if(E.length){c.error(E);return false}
     const rec=g||{id:uid(),contribs:[]};Object.assign(rec,{name:f.name.trim(),target:tg,startDate:f.startDate||Dt.today(),targetDate:f.targetDate||'',priority:f.priority,status:f.status,accountId:f.accountId,description:f.description.trim()});
     if(isNew&&ini>0)rec.contribs.push({id:uid(),date:rec.startDate,amount:ini,note:'Opening amount'});await Repo.save('goals',rec,'Goal: '+rec.name);Notify.ok('Goal saved')}}]})},
- menu(g,anchor){UI.menu(anchor,[g.status==='paused'?{label:'Resume goal',run:()=>Goals.setStatus(g,'active')}:{label:'Pause goal',run:()=>Goals.setStatus(g,'paused')},g.status==='completed'?{label:'Reopen goal',run:()=>Goals.setStatus(g,'active')}:{label:'Mark completed',run:()=>Goals.setStatus(g,'completed')},{label:'Archive goal',run:()=>Goals.setStatus(g,'archived')},{label:'Delete goal…',danger:true,run:async()=>{if(await UI.confirm({title:'Delete goal',message:`Delete “${g.name}” and its contribution history? It can be restored from the trash in Data & Backup.`,confirm:'Delete',danger:true}))await Repo.remove('goals',g.id)}}])},
+ menu(g,anchor){UI.menu(anchor,[g.status==='paused'?{label:'Resume goal',run:()=>Goals.setStatus(g,'active')}:{label:'Pause goal',run:()=>Goals.setStatus(g,'paused')},g.status==='completed'?{label:'Reopen goal',run:()=>Goals.setStatus(g,'active')}:{label:'Mark completed',run:()=>Goals.setStatus(g,'completed')},{label:'Archive goal',run:()=>Goals.setStatus(g,'archived')},{label:'Delete goal…',danger:true,run:async()=>{if((g.contribs||[]).some(x=>x.txId)){Notify.error('Reverse this goal’s account-linked entries first (History → Delete), then delete the goal. This keeps your account balances correct.');return}if(await UI.confirm({title:'Delete goal',message:`Delete “${g.name}” and its contribution history? It can be restored from the trash in Data & Backup.`,confirm:'Delete',danger:true}))await Repo.remove('goals',g.id)}}])},
  async setStatus(g,s){g.status=s;await Repo.save('goals',g,'Goal '+s+': '+g.name)}
 };
 PAGES.savings=async(el,alive)=>{
@@ -1493,7 +1651,7 @@ PAGES.savings=async(el,alive)=>{
  let cum=0;
  el.innerHTML=`${UI.pageHead('Savings','Net savings and savings goals',`<button class="btn primary" data-act="newgoal">+ New goal</button>`)}${Per.bar('savings')}
  <div class="kpis">${UI.kpi('Net savings',Money.fmt(net),{tone:net<0?'exp':'sav',s:'Income − expenditure'})}${UI.kpi('Savings rate',Money.pct(Calc.rate(ag.inc,ag.exp)),{s:ag.inc>0?'Net ÷ income':'No income in this period'})}${UI.kpi('Average monthly savings',Money.fmt(avg),{s:ms.length+' month(s)'})}${UI.kpi('Savings-type accounts',Money.fmt(savAcc),{s:'Current balance'})}${UI.kpi('Saved in goals',Money.fmt(sum(live.filter(g=>g.status!=='completed'||true),g=>Goals.saved(g))),{s:live.length+' goal(s)'})}</div>
- <div class="note" style="margin:.9rem 0">Net savings is calculated only from income and expenditure. Transfers between your accounts are excluded. Savings goals are <b>earmarks</b> inside balances you already hold — they never add to income or balances, so money is not counted twice.</div>
+ <div class="note" style="margin:.9rem 0">Net savings is calculated only from income and expenditure. Transfers between your accounts are excluded. Goal contributions take money <b>from the accounts you choose</b> and withdrawals return it to the accounts you choose, so account balances change. These movements are recorded in Transactions but are <b>not</b> income or expenditure, so net savings is unaffected.</div>
  <div class="g2"><div class="card"><h3>Net savings by month</h3><div class="chart" id="s1"></div></div><div class="card"><h3>Cumulative savings in period</h3><div class="chart" id="s2"></div></div></div>
  <div class="sh"><h3>Savings goals</h3></div>
  ${live.length?`<div class="g2" id="goals">${live.map(g=>Goals.card(g,g.accountId?{earm:earm.get(g.accountId)||0,bal:balOf(g.accountId),over:(earm.get(g.accountId)||0)>balOf(g.accountId)}:null)).join('')}</div>`:UI.empty('No savings goals yet','Create a goal such as an emergency fund, travel or education, then record contributions as you save.')}
@@ -1512,12 +1670,12 @@ const AccountForm={
     if(State.accounts.some(a=>a.id!==(ac&&ac.id)&&a.name.toLowerCase()===f.name.trim().toLowerCase()))E.push({field:'name',msg:'An account with this name already exists.'});if(E.length){c.error(E);return false}
     const rec=ac||{id:uid()};Object.assign(rec,{name:f.name.trim(),type:f.type,openingBalance:ob,currency:used?d.currency:(f.currency||S.currency),reference:f.reference.trim(),description:f.description.trim(),status:f.status});await Repo.save('accounts',rec,'Account: '+rec.name);Notify.ok('Account saved')}}]})},
  async transactionsForAccount(id){const all=await DB.getAll('transactions');return all.filter(t=>t.accountId===id||t.toAccountId===id||(Array.isArray(t.allocations)?t.allocations:[]).some(x=>x&&x.accountId===id))},
- async remove(ac){const used=await AccountForm.transactionsForAccount(ac.id),n=used.length,targets=State.accounts.filter(a=>a.id!==ac.id&&a.status!=='archived'&&a.currency===ac.currency);
+ async remove(ac){const used=await AccountForm.transactionsForAccount(ac.id),n=used.length,gl=used.some(t=>t.type==='goal'),targets=State.accounts.filter(a=>a.id!==ac.id&&a.status!=='archived'&&a.currency===ac.currency);
   if(!n){if(await UI.confirm({title:'Delete account',message:`Delete “${ac.name}”? It has no transactions. It can be restored from the trash.`,confirm:'Delete',danger:true})){await AccountForm.detach(ac.id,'');await Repo.remove('accounts',ac.id)}return}
   UI.dialog({title:'Account has transaction history',wide:true,body:`<p style="margin-top:0"><b>${esc(ac.name)}</b> is used by <b>${n.toLocaleString()}</b> transaction(s). Choose how to proceed — history is never deleted silently.</p>
    <div class="grp" style="flex-direction:column;gap:.5rem"><label><input type="radio" name="mode" value="archive" checked> <span><b>Archive</b> (recommended) — hide it from new entries; history and totals stay intact.</span></label>
    <label><input type="radio" name="mode" value="reassign" ${targets.length?'':'disabled'}> <span><b>Move transactions</b> to another ${esc(ac.currency)} account, then delete this one:</span></label>${F.sel('target',targets.map(a=>[a.id,a.name]),'', targets.length?'':'disabled')}
-   <label><input type="radio" name="mode" value="purge"> <span class="exp"><b>Delete the account and all ${n.toLocaleString()} transactions</b> (moved to the trash). Balances elsewhere may change.</span></label>${F.inp('confirm','','placeholder="Type DELETE to confirm purge"')}</div>`,
+   <label><input type="radio" name="mode" value="purge" ${gl?'disabled':''}> <span class="${gl?'muted':'exp'}"><b>Delete the account and all ${n.toLocaleString()} transactions</b> (moved to the trash). Balances elsewhere may change.</span></label>${F.inp('confirm','','placeholder="Type DELETE to confirm purge"')}</div>`,
    actions:[{label:'Cancel',run(){}},{label:'Continue',primary:true,async run(c){const f=c.read();
     if(f.mode==='archive'){ac.status='archived';await Repo.save('accounts',ac,'Archived account: '+ac.name);Notify.ok('Account archived');return}
     if(f.mode==='purge'){if(f.confirm!=='DELETE'){c.error([{field:'confirm',msg:'Type DELETE to confirm.'}]);return false}
@@ -1747,8 +1905,8 @@ async function buildReport(type,r,ag){
    return{head:['Month','Inflow (income)','Outflow (expenditure)','Net cash flow','Closing balance*'],types:['t','m','m','m','m'],rows,foot:['Total',ag.inc,ag.exp,ag.inc-ag.exp,null],note:'*Closing balance = opening balances of active accounts + cumulative income − expenditure (base currency, transfers net to zero).',charts:[{title:'Inflow vs outflow',draw:h=>Charts.bars(h,{labels:ms.map(mlabel),series:[{name:'Inflow',color:Charts.col.inc,data:rows.map(x=>x[1])},{name:'Outflow',color:Charts.col.exp,data:rows.map(x=>x[2])}]})},{title:'Net cash flow',draw:h=>Charts.bars(h,{labels:ms.map(mlabel),series:[{name:'Net',color:Charts.col.inc,data:rows.map(x=>x[3])}],neg:Charts.col.exp})}]}}
   case'category':{const ids=new Set([...ag.catInc.keys(),...ag.catExp.keys()]),rows=[...ids].map(id=>{const i=ag.catInc.get(id),e=ag.catExp.get(id),c=State.m.categories.get(id);return[id?nm('categories',id):'Uncategorized',c?cap(c.kind):'—',i?i.amt:0,e?e.amt:0,(i?i.amt:0)-(e?e.amt:0),(i?i.n:0)+(e?e.n:0)]}).sort((a,b)=>(b[2]+b[3])-(a[2]+a[3]));
    return{head:['Category','Kind','Income','Expenditure','Net','Entries'],types:['t','t','m','m','m','i'],rows,foot:['Total','',ag.inc,ag.exp,ag.inc-ag.exp,ag.incN+ag.expN],charts:[{title:'Expenditure by category',draw:h=>Charts.hbars(h,{items:catItems(ag.catExp).sort((a,b)=>b.value-a.value)})},{title:'Income by source',draw:h=>Charts.hbars(h,{items:catItems(ag.catInc).sort((a,b)=>b.value-a.value)})}]}}
-  case'account':{const before=r.from?await Analytics.period(null,Dt.addDays(r.from,-1)):new Agg(),z={inc:0,exp:0,tin:0,tout:0},rows=[],cur=[];
-   for(const ac of State.accounts){const x=ag.acc.get(ac.id)||z,b=before.acc.get(ac.id)||z,op=(ac.openingBalance||0)+b.inc-b.exp+b.tin-b.tout,c=ac.currency,mk=v=>({v,c});rows.push([ac.name+(ac.status==='archived'?' (archived)':''),mk(op),mk(x.inc),mk(x.exp),mk(x.tin),mk(x.tout),mk(op+x.inc-x.exp+x.tin-x.tout)])}
+  case'account':{const before=r.from?await Analytics.period(null,Dt.addDays(r.from,-1)):new Agg(),z={inc:0,exp:0,tin:0,tout:0,gin:0,gout:0},rows=[],cur=[];
+   for(const ac of State.accounts){const x=ag.acc.get(ac.id)||z,b=before.acc.get(ac.id)||z,op=(ac.openingBalance||0)+b.inc-b.exp+b.tin-b.tout+(b.gin||0)-(b.gout||0),c=ac.currency,mk=v=>({v,c});rows.push([ac.name+(ac.status==='archived'?' (archived)':''),mk(op),mk(x.inc),mk(x.exp),mk(x.tin),mk(x.tout),mk(op+x.inc-x.exp+x.tin-x.tout+(x.gin||0)-(x.gout||0))])}
    return{head:['Account','Opening','Income','Expenditure','Transfers in','Transfers out','Closing'],types:['t','mc','mc','mc','mc','mc','mc'],rows,foot:null,note:'Amounts are shown in each account’s own currency. Transfers move money between accounts and are not income or expenditure.',charts:[{title:'Closing balance by account',draw:h=>Charts.hbars(h,{items:rows.map(x=>({label:x[0],value:Math.round(x[6].v*Money.rate(x[6].c))})),fmt:v=>Money.fmt(v)})},{title:'Expenditure by account',draw:h=>Charts.hbars(h,{items:rows.map(x=>({label:x[0],value:Math.round(x[3].v*Money.rate(x[3].c))}))})}]}}
   case'budget':{const items=[];for(const b of State.budgets.filter(b=>!b.archived))for(const w of Budgets.windows(b,r.from,r.to,24))items.push({b,...w});const sp=await Budgets.spentMany(items);
    const rows=items.map((it,i)=>[it.b.name,Dt.disp(it.from)+' – '+Dt.disp(it.to),it.b.amount,sp[i],it.b.amount-sp[i],it.b.amount?sp[i]/it.b.amount*100:null]);
@@ -1843,7 +2001,7 @@ const Backup={
   if(!o.stores||typeof o.stores!=='object')E.push('Missing data stores.');if(E.length)return{errors:E,warnings:W};
   for(const s of Backup.STORES){const a=o.stores[s];if(a===undefined)continue;if(!Array.isArray(a)){E.push(`Store “${s}” is not a list.`);continue}const k=s==='settings'?'key':'id';let bad=0;for(const x of a)if(!x||typeof x!=='object'||typeof x[k]!=='string'||!x[k])bad++;if(bad)E.push(`Store “${s}” has ${bad} record(s) without a valid ${k}.`)}
   const tx=o.stores.transactions||[];let bad=0;const accIds=new Set((o.stores.accounts||[]).map(a=>a.id));let orphan=0;
-  for(const t of tx){if(!t||!['income','expense','transfer'].includes(t.type)||!Dt.valid(t.date)||!Number.isInteger(t.amount)||t.amount<=0||typeof t.accountId!=='string'||(t.type==='transfer'&&(!t.toAccountId||t.toAccountId===t.accountId)))bad++;else{if(!accIds.has(t.accountId))orphan++;if(t.allocations!==undefined&&!Array.isArray(t.allocations)){bad++;}else if(Array.isArray(t.allocations)&&t.allocations.length){const seen=new Set();let total=0,invalid=false;for(const x of t.allocations){if(!x||typeof x.accountId!=='string'||!accIds.has(x.accountId)||!Number.isInteger(x.amount)||x.amount<=0||seen.has(x.accountId))invalid=true;if(x&&Number.isInteger(x.amount))total+=x.amount;if(x)seen.add(x.accountId)}if(t.type!=='income'||t.allocations.length<2||total!==t.amount||invalid)bad++}}}
+  for(const t of tx){if(!t||!['income','expense','transfer','goal'].includes(t.type)||!Dt.valid(t.date)||!Number.isInteger(t.amount)||t.amount<=0||typeof t.accountId!=='string'||(t.type==='transfer'&&(!t.toAccountId||t.toAccountId===t.accountId)))bad++;else{if(!accIds.has(t.accountId))orphan++;if(t.allocations!==undefined&&!Array.isArray(t.allocations)){bad++;}else if(Array.isArray(t.allocations)&&t.allocations.length){const seen=new Set();let total=0,invalid=false;for(const x of t.allocations){if(!x||typeof x.accountId!=='string'||!accIds.has(x.accountId)||!Number.isInteger(x.amount)||x.amount<=0||seen.has(x.accountId))invalid=true;if(x&&Number.isInteger(x.amount))total+=x.amount;if(x)seen.add(x.accountId)}if((t.type==='income'&&t.allocations.length<2)||(t.type!=='income'&&t.type!=='goal')||total!==t.amount||invalid)bad++}}}
   if(bad)E.push(`${bad.toLocaleString()} transaction(s) are malformed (type, date, integer amount or accounts).`);if(orphan)W.push(`${orphan.toLocaleString()} transaction(s) reference accounts not in the backup (fine for merge if those accounts already exist).`);
   for(const a of o.stores.accounts||[])if(!Number.isInteger(a.openingBalance||0))E.push('Account “'+a.name+'” has a non-integer opening balance.');
   return{errors:E.slice(0,12),warnings:W}},
@@ -1887,7 +2045,7 @@ const Lock={
  async set(pw){const salt=crypto.getRandomValues(new Uint8Array(16));await Settings.set('lock',{salt:Crypt.b64(salt),hash:await Lock.hash(pw,salt)})},
  async verify(pw){return S.lock&&(await Lock.hash(pw,Crypt.unb64(S.lock.salt)))===S.lock.hash},
  show(){if(!S.lock)return;$('#app').hidden=true;$('#lock').hidden=false;$('#lockPw').value='';$('#lockErr').textContent='';setTimeout(()=>$('#lockPw').focus(),30)},
- hide(){$('#lock').hidden=true;$('#app').hidden=false;Lock.reset()},
+ hide(){$('#lock').hidden=true;$('#app').hidden=false;Lock.reset();if(typeof NavPill!=='undefined')NavPill.place(true)},
  reset(){clearTimeout(Lock._t);if(S.lock&&+S.lockMinutes>0&&$('#lock').hidden)Lock._t=setTimeout(()=>Lock.show(),S.lockMinutes*60000)}
 };
 
@@ -1922,11 +2080,11 @@ PAGES.settings=async el=>{
 const Trash={async restore(d){await Repo.restore(d);if(d.store==='customFields'&&d.values){const ids=Object.keys(d.values);await TxService.patch(ids,r=>{r.custom=r.custom||{};r.custom[d.record.id]=d.values[r.id];return r},'restore column values')}await State.reload();Notify.ok('Restored')}};
 const trashLabel=d=>{const r=d.record;return d.store==='transactions'?`${Dt.disp(r.date)} · ${cap(r.type)} · ${Money.fmt(r.amount,r.currency)} · ${r.description||''}`:(r.name||r.description||d.recordId)};
 async function integrityCheck(){const b=UI.busy('Checking integrity…');try{const issues=[],ok=[];const accIds=new Set(State.accounts.map(a=>a.id)),cat=State.m.categories;let n=0,orphA=0,same=0,badAmt=0,badDate=0,orphC=0,orphP=0,orphT=0,badAlloc=0;
-  await DB.scan('transactions',{},t=>{n++;if(!accIds.has(t.accountId)||(t.type==='transfer'&&!accIds.has(t.toAccountId)))orphA++;if(t.type==='transfer'&&t.accountId===t.toAccountId)same++;if(!Number.isInteger(t.amount)||t.amount<=0)badAmt++;if(!Dt.valid(t.date))badDate++;if((t.categoryId&&!cat.has(t.categoryId))||(t.subcategoryId&&!cat.has(t.subcategoryId)))orphC++;if(t.paymentMethodId&&!State.m.paymentMethods.has(t.paymentMethodId))orphP++;for(const g of t.tags||[])if(!State.m.tags.has(g))orphT++;if(t.allocations!==undefined&&!Array.isArray(t.allocations))badAlloc++;if(Array.isArray(t.allocations)&&t.allocations.length){const seen=new Set();let total=0;for(const x of t.allocations){if(!x||!accIds.has(x.accountId))orphA++;if(!x||!Number.isInteger(x.amount)||x.amount<=0)badAlloc++;else total+=x.amount;if(x&&seen.has(x.accountId))badAlloc++;if(x)seen.add(x.accountId)}if(t.type!=='income'||t.allocations.length<2||total!==t.amount)badAlloc++}});
+  await DB.scan('transactions',{},t=>{n++;if(!accIds.has(t.accountId)||(t.type==='transfer'&&!accIds.has(t.toAccountId)))orphA++;if(t.type==='transfer'&&t.accountId===t.toAccountId)same++;if(!Number.isInteger(t.amount)||t.amount<=0)badAmt++;if(!Dt.valid(t.date))badDate++;if((t.categoryId&&!cat.has(t.categoryId))||(t.subcategoryId&&!cat.has(t.subcategoryId)))orphC++;if(t.paymentMethodId&&!State.m.paymentMethods.has(t.paymentMethodId))orphP++;for(const g of t.tags||[])if(!State.m.tags.has(g))orphT++;if(t.allocations!==undefined&&!Array.isArray(t.allocations))badAlloc++;if(Array.isArray(t.allocations)&&t.allocations.length){const seen=new Set();let total=0;for(const x of t.allocations){if(!x||!accIds.has(x.accountId))orphA++;if(!x||!Number.isInteger(x.amount)||x.amount<=0)badAlloc++;else total+=x.amount;if(x&&seen.has(x.accountId))badAlloc++;if(x)seen.add(x.accountId)}if((t.type==='income'&&t.allocations.length<2)||(t.type!=='income'&&t.type!=='goal')||total!==t.amount)badAlloc++}});
   const chk=(c,bad,msg,good)=>c?issues.push(`${bad.toLocaleString()} ${msg}`):ok.push(good);
   chk(orphA,orphA,'transaction/account allocation(s) reference a missing account.','All transaction account references resolve.');chk(badAlloc,badAlloc,'split allocation(s) are invalid or do not add up to the income amount.','All split income allocations reconcile exactly.');chk(same,same,'transfer(s) use the same account as source and destination.','No self-transfers.');chk(badAmt,badAmt,'transaction(s) have a non-integer or non-positive amount.','All amounts are positive integers (minor units).');chk(badDate,badDate,'transaction(s) have an invalid date.','All dates are valid.');chk(orphC,orphC,'transaction(s) reference a missing category (history is kept, shown as removed).','All category references resolve.');chk(orphP,orphP,'transaction(s) reference a missing payment method.','All payment-method references resolve.');chk(orphT,orphT,'tag reference(s) point to a missing tag.','All tag references resolve.');
   const all=await Analytics.period(null,null),rows=Calc.accountRows(all),single=State.accounts.every(a=>a.currency===S.currency&&true);
-  if(single){const tot=sum(rows,r=>r.balance),exp=sum(State.accounts,a=>a.openingBalance||0)+all.inc-all.exp;tot===exp?ok.push('Σ account balances = Σ opening balances + income − expenditure (transfers net to zero).'):issues.push(`Balance reconciliation differs by ${Money.fmt(tot-exp)}.`)}
+  if(single){const tot=sum(rows,r=>r.balance),exp=sum(State.accounts,a=>a.openingBalance||0)+all.inc-all.exp+sum([...all.acc.values()],x=>(x.gin||0)-(x.gout||0));tot===exp?ok.push('Σ account balances = Σ opening balances + income − expenditure (transfers net to zero).'):issues.push(`Balance reconciliation differs by ${Money.fmt(tot-exp)}.`)}
   UI.info('Integrity check',`<p style="margin-top:0">${n.toLocaleString()} transaction(s) examined.</p>${issues.length?`<div class="note err"><b>Issues</b><ul>${issues.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`:''}<ul>${ok.map(i=>`<li class="inc">✓ ${esc(i)}</li>`).join('')}</ul>`)}catch(e){Notify.error('Integrity check failed: '+e.message)}finally{b.done()}}
 async function runSelfTests(){const out=[],T=(n,fn)=>{try{const r=fn();out.push([n,r===true||r===undefined,r===true||r===undefined?'':String(r)])}catch(e){out.push([n,false,e.message])}},eq=(a,b)=>a===b?true:`expected ${b}, got ${a}`;
  T('Money parsing is exact (integer minor units)',()=>{for(const[i,o]of[['1,234.56',123456],['0.1',10],['19.99',1999],['100',10000],['-5.5',-550],['₹ 2,50,000',25000000]])if(Money.parse(i)!==o)return`${i} → ${Money.parse(i)}`;if(!isNaN(Money.parse('1.234'))||!isNaN(Money.parse('abc'))||!isNaN(Money.parse('')))return'invalid input accepted';return true});
@@ -2048,7 +2206,25 @@ PAGES.changelog=async(el,alive)=>{
  if(S.changelogSeen!==APP_VERSION){Settings.setMany({changelogSeen:APP_VERSION}).catch(()=>{});document.querySelectorAll('.newdot').forEach(n=>n.remove())}
  const recent=await DB.recent('audit','ts',30);if(!alive())return;
  el.innerHTML=`${UI.pageHead('Update log','A plain record of Ledgerbook improvements and recent saved activity')}
-  <div class="card" style="margin-bottom:.8rem"><div class="ph" style="margin-bottom:.35rem"><div><h2 style="font-size:1.12rem">Ledgerbook · Responsive zoom and workspace layout</h2><div class="sub">Version 1.7.1 · 15 November 2026</div></div><div class="spacer"></div><span class="badge">Current release</span></div>
+  <div class="card" style="margin-bottom:.8rem"><div class="ph" style="margin-bottom:.35rem"><div><h2 style="font-size:1.12rem">Ledgerbook · Calm motion system</h2><div class="sub">Version 1.9.0 · 17 November 2026</div></div><div class="spacer"></div><span class="badge">Current release</span></div>
+   <div class="release-item"><h4>Fixed: earlier animations were silently switched off</h4><p>Several animations from earlier releases (page entrance, dialog and toast arrival, bar growth, progress rings) referred to a timing value that was never defined, so browsers ignored them. That value now exists, so those animations finally play. A new automatic check in the build process catches this kind of mistake.</p></div>
+   <div class="release-item"><h4>Sliding navigation highlight</h4><p>One highlight now glides between sidebar items as you change pages instead of jumping. Sidebar items also ease in one after another when the app opens, and the top bar settles in from above.</p></div>
+   <div class="release-item"><h4>Gentler page changes</h4><p>The old page fades away quickly before the next one arrives. Page headings and groups fade; cards, tiles and tables rise softly in sequence. Saving or refreshing data no longer replays the heading animation.</p></div>
+   <div class="release-item"><h4>Charts reveal themselves</h4><p>Bars rise one after another, line charts draw from left to right with their points popping in afterwards, donut charts turn into place with their legend following, and budget bars list in order. This happens once per page visit; resizing the window redraws charts without replaying it.</p></div>
+   <div class="release-item"><h4>Tables settle in</h4><p>The first rows of the Transactions table and other tables ease in with a light stagger whenever the list loads, sorts, filters or changes page.</p></div>
+   <div class="release-item"><h4>Spending calendar glides</h4><p>Moving to the previous or next month slides the grid in the direction you are heading. Choosing a day softly settles its detail panel, and day cells lift gently on hover.</p></div>
+   <div class="release-item"><h4>Quiet, informative feedback</h4><p>Notifications show a thin timer bar for how long they will stay. Long operations show a small spinner. The “Saved” indicator settles in when a save completes, and the startup screen breathes while the database opens.</p></div>
+   <div class="release-item"><h4>Smoother themes and dialogs</h4><p>Changing the colour palette now cross-fades like switching light and dark. Dialog backdrops are softly blurred, expandable sections unfold with a fade, and checkboxes, radio buttons, date-picker days and split-account rows respond with small, quick movements.</p></div>
+   <div class="release-item"><h4>Respects your motion settings</h4><p>Every new animation stops when your operating system asks for reduced motion or when you choose “Always reduce motion” in Settings. Lines and charts then simply appear, with nothing hidden.</p></div>
+   <div class="release-item"><h4>Data continuity</h4><p>This release only changes how the app looks and moves. No records, settings, database name, version or stored structure were changed. It includes everything from 1.8.0 (account-linked savings goals).</p></div>
+  </div>
+ <div class="card" style="margin-bottom:.8rem"><div class="ph" style="margin-bottom:.35rem"><div><h2 style="font-size:1.12rem">Ledgerbook · Account-linked savings goals</h2><div class="sub">Version 1.8.0 · 17 November 2026</div></div><div class="spacer"></div><span class="badge">Previous release</span></div>
+   <div class="release-item"><h4>Choose the accounts for every goal movement</h4><p>Contribute: pick one or more accounts and the amount each gives; the total is deducted from exactly those accounts. Withdraw: pick the accounts that receive the money back. Each account shows its available balance while you choose.</p></div>
+   <div class="release-item"><h4>Balances change, and the movement is recorded</h4><p>Account balances, the Accounts page, net worth and the dashboard now reflect goal contributions and withdrawals. Each movement appears in Transactions as a “Savings goal” entry listing the accounts used. It is not counted as income or expenditure, so net savings is unchanged.</p></div>
+   <div class="release-item"><h4>Safer reversals</h4><p>Deleting a goal entry from its History reverses the movement atomically. A reversal is refused if it would leave an account negative. A goal with account-linked entries cannot be deleted until those are reversed. Goal entries cannot be edited or deleted from the Transactions table, and an account with goal movements cannot be permanently deleted (archive it instead).</p></div>
+   <div class="release-item"><h4>Data continuity</h4><p>No database name, version or store schema change. Goal movements use the existing transactions store with a new value, <code>type: 'goal'</code>. Entries recorded before 1.8.0 are kept and marked “(before v1.8.0)”; they are not linked to an account and do not change balances.</p></div>
+  </div>
+ <div class="card" style="margin-bottom:.8rem"><div class="ph" style="margin-bottom:.35rem"><div><h2 style="font-size:1.12rem">Ledgerbook · Responsive zoom and workspace layout</h2><div class="sub">Version 1.7.1 · 15 November 2026</div></div><div class="spacer"></div><span class="badge">Previous release</span></div>
    <div class="release-item"><h4>Centered wide-screen workspace</h4><p>Fixed the large-screen layout so the main content no longer stays stuck to the left with unused space on the right. The workspace now uses the available width at normal sizes and is centered on very wide viewports.</p></div>
    <div class="release-item"><h4>More consistent browser zoom behaviour</h4><p>Adjusted the compact-layout breakpoint so desktop navigation and page structure remain available through more ordinary browser zoom levels. At genuinely narrow widths, the layout still changes to its mobile navigation and stacked-card arrangement.</p></div>
    <div class="release-item"><h4>Responsive transaction grid</h4><p>The transaction table now expands to fill its container when there is enough room. Horizontal scrolling remains contained within the table when the visible columns cannot fit, rather than widening the whole application.</p></div>
@@ -2112,6 +2288,17 @@ PAGES.help=async el=>{el.innerHTML=`${UI.pageHead('Help & formulas','Reference, 
  <h4>Known limitations</h4><ul><li>Browser storage is per browser profile and, for <code>file://</code>, tied to the file’s path. Clearing site data deletes the database — keep backups. A sidecar change journal needs user-granted folder access; the browser cannot silently write to the HTML file’s folder.</li><li>Firefox and Safari restrict or vary IndexedDB behaviour for local files; use Chrome or Edge for direct file use.</li><li>Analytics read the date range from the index and aggregate in memory; very large ranges (hundreds of thousands of rows) take a moment on first load and are cached until data changes. Tables are paginated and never render the whole dataset.</li><li>The interface lock does not encrypt IndexedDB. Only encrypted backups are encrypted.</li><li>All currencies are formatted with two decimals. Exchange rates are manual; each transaction stores its own rate snapshot.</li><li>Multi-tab editing is supported by reloading state on change notifications, but avoid editing the same record in two tabs.</li></ul>
  <h4>Testing</h4><p>Use <i>Data &amp; Backup → Run self-tests</i> (calculations, validation, CSV, backup validation, encryption, database probe), <i>Check data integrity</i> (orphan references, balance reconciliation) and <i>Generate sample data + Run benchmark</i> for large datasets.</p></div>`};
 
+/* ---------- v1.9.0 motion helpers ---------- */
+const Motion={reduced:()=>document.body.classList.contains('rm')||matchMedia('(prefers-reduced-motion:reduce)').matches,wait:ms=>new Promise(r=>setTimeout(r,ms))};
+/* One highlight "pill" glides between sidebar items. Purely visual: if it cannot be placed, the normal .on style still shows. */
+const NavPill={el:null,
+ place(instant){const nav=$('#nav'),a=nav&&$('a.nl.on',nav);if(!nav||!a||!a.offsetWidth)return;let p=NavPill.el;
+  if(!p||!p.isConnected){p=NavPill.el=document.createElement('span');p.className='nav-pill noanim';p.setAttribute('aria-hidden','true');nav.prepend(p);nav.classList.add('has-pill')}
+  if(instant||!p.classList.contains('ready'))p.classList.add('noanim');
+  p.style.width=a.offsetWidth+'px';p.style.height=a.offsetHeight+'px';p.style.transform=`translate(${a.offsetLeft}px,${a.offsetTop}px)`;p.classList.add('ready');
+  if(p.classList.contains('noanim')){void p.offsetWidth;requestAnimationFrame(()=>p.classList.remove('noanim'))}}};
+window.addEventListener('resize',debounce(()=>NavPill.place(true),150));
+
 /* ---------- Clock (seconds digits roll up subtly) ---------- */
 const H12=()=>S.timeFormat==='12'||(S.timeFormat==='auto'&&!!new Intl.DateTimeFormat(undefined,{hour:'numeric'}).resolvedOptions().hour12);
 const Clock={
@@ -2127,7 +2314,9 @@ const NAV=[['Overview',[['dashboard','Dashboard'],['calendar','Spending Calendar
 const App={tok:0,keep:false,lastRoute:null,
  route(){const h=location.hash.replace(/^#\/?/,'')||'dashboard';return PAGES[h]?h:'dashboard'},
  async render(){const id=App.route(),routeChanged=App.lastRoute!==id,tok=++App.tok,alive=()=>tok===App.tok,view=$('#view'),top=App.keep?view.scrollTop:0;view.onclick=null;view.onchange=null;view.oninput=null;
-  $$('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.r===id));document.title=((NAV.flatMap(g=>g[1]).find(x=>x[0]===id)||[0,'Ledgerbook'])[1])+' — Ledgerbook';
+  $$('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.r===id));NavPill.place();document.title=((NAV.flatMap(g=>g[1]).find(x=>x[0]===id)||[0,'Ledgerbook'])[1])+' — Ledgerbook';
+  if(routeChanged&&App.lastRoute!==null&&!Motion.reduced()){view.classList.add('route-leave');await Motion.wait(110);if(!alive())return}
+  view.classList.remove('route-leave');
   try{await PAGES[id](view,alive)}catch(e){console.error(e);if(alive())view.innerHTML=`<div class="note err"><b>This page could not be displayed.</b><br>${esc(e.message||e)}</div>`}
   if(alive()){if(routeChanged){view.classList.remove('route-enter');void view.offsetWidth;view.classList.add('route-enter')}else{view.classList.remove('route-enter')}if(App.keep)view.scrollTop=top;else{view.scrollTop=0}App.keep=false;App.lastRoute=id}},
  refresh(){App.keep=true;return App.render()}
@@ -2145,7 +2334,7 @@ window.addEventListener('unhandledrejection',e=>{const m=e.reason&&e.reason.mess
  try{if(!await DB.probe())throw new Error('read-back mismatch')}catch(e){return fail('Persistence check failed.',`The browser opened IndexedDB but a test write could not be read back (${esc(e.message)}). Data would not be reliably saved, so the app is not starting.`)}
  try{await Settings.load();await State.reload();await AutoLog.init();await Seed.run()}catch(e){return fail('Could not load your data.',esc(e.message))}
  try{DB.bc=new BroadcastChannel('ledgerbook');DB.bc.onmessage=async()=>{await State.reload();await Settings.load();Settings.apply();DB.version++;App.refresh()}}catch(_){}
- $('#nav').innerHTML=NAV.map(([g,items])=>`<div class="ng">${esc(g)}</div>`+items.map(([id,l])=>`<a class="nl" href="#/${id}" data-r="${id}">${esc(l)}${id==='changelog'&&S.changelogSeen!==APP_VERSION?'<i class="newdot" aria-label="New"></i>':''}</a>`).join('')).join('');
+ let ni=0;$('#nav').innerHTML=NAV.map(([g,items])=>`<div class="ng">${esc(g)}</div>`+items.map(([id,l])=>`<a class="nl" href="#/${id}" data-r="${id}" style="--i:${ni++}">${esc(l)}${id==='changelog'&&S.changelogSeen!==APP_VERSION?'<i class="newdot" aria-label="New"></i>':''}</a>`).join('')).join('');
  const setNav=open=>{$('#side').classList.toggle('open',open);$('#scrim').hidden=!open;$('#menuBtn').setAttribute('aria-expanded',String(open))};
  $('#menuBtn').onclick=()=>setNav(!$('#side').classList.contains('open'));$('#sideClose').onclick=()=>setNav(false);$('#scrim').onclick=()=>setNav(false);
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#side').classList.contains('open')&&!document.querySelector('dialog[open]'))setNav(false)});

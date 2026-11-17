@@ -7,7 +7,7 @@ LedgerBook is intentionally a single-file browser application. Its repository is
 | Path | Responsibility |
 |---|---|
 | **index.html** | Canonical HTML application and hosted-site entry point. |
-| **Ledgerbook_Enhanced_v1.7.1.html** | Version-labelled copy distributed as the 1.7.1 download. |
+| **Ledgerbook_Enhanced_v1.9.0.html** | Version-labelled copy distributed as the 1.9.0 download. |
 | **LICENSE** | Apache License 2.0. |
 | **README.md** | User-facing overview, startup instructions, and data-safety notes. |
 | **.gitignore** | Excludes local financial journals, baselines, and export files. |
@@ -27,7 +27,7 @@ The verification script uses only Node.js built-ins. There is no dependency lock
 The repository supports two useful delivery paths:
 
 - **index.html** gives static hosting providers a conventional entry point.
-- **Ledgerbook_Enhanced_v1.7.1.html** gives users a clearly versioned file to download and keep locally.
+- **Ledgerbook_Enhanced_v1.9.0.html** gives users a clearly versioned file to download and keep locally.
 
 They intentionally share identical bytes. The automated verification script prevents the hosted app and downloadable copy from silently diverging.
 

@@ -2,16 +2,23 @@
 
 LedgerBook is a private, local-first personal finance ledger delivered as a single HTML file. It runs directly in a modern browser, requires no installation, and keeps its records in the browser's local IndexedDB storage.
 
-**Current release:** 1.7.1 · **License:** Apache-2.0 · **Format:** single-file HTML application
+**Current release:** 1.9.0 · **License:** Apache-2.0 · **Format:** single-file HTML application
 
 🌐 **[Browse LedgerBook online](https://kosandra0.github.io/LedgerBook-Finance-Manager-/)**
+
+## What's new in 1.9.0
+
+- **Calm motion system.** Sliding navigation highlight, a brief page fade between sections, staggered cards and table rows, bars that rise, lines that draw, donuts that turn into place, a spending-calendar glide between months, toast timer bars, a busy spinner, and a palette cross-fade.
+- **Animation fix.** Earlier releases referenced a timing value that was never defined, so several animations never ran. They now do, and the release check guards against this class of mistake.
+- **Account-linked savings goals (from 1.8.0).** Pick the accounts for each contribution or withdrawal; goal movements change balances, appear in Transactions, and can be reversed from the goal's History.
+- **Data continuity.** No database name, version or schema change. Make a full JSON backup before replacing an application file.
 
 ## Start using LedgerBook
 
 You can use LedgerBook directly in your browser, or download the standalone HTML file:
 
 1. **[Open LedgerBook in your browser](https://kosandra0.github.io/LedgerBook-Finance-Manager-/)** to use the hosted version.
-2. Download [`Ledgerbook_Enhanced_v1.7.1.html`](Ledgerbook_Enhanced_v1.7.1.html) from this repository to use it locally.
+2. Download [`Ledgerbook_Enhanced_v1.9.0.html`](Ledgerbook_Enhanced_v1.9.0.html) from this repository to use it locally.
 3. Open the downloaded file in a current version of Chrome or Edge.
 4. For each copy, use the same browser profile and the same file location or website origin each time.
 
@@ -22,10 +29,12 @@ No package installation, server, or account is required for normal use. The host
 ## What it includes
 
 - Income, expenses, transfers, accounts, savings goals, budgets, and recurring entries.
+- Savings goals linked to your accounts: choose which account(s) a contribution comes from or a withdrawal returns to. Balances update and each movement appears in Transactions (not counted as income or expense).
 - A spending calendar with daily totals and transaction drill-down.
 - Dashboard, reports, analytics, categories, tags, payment methods, and custom columns.
 - CSV import/export and full JSON backup/restore.
 - Light and dark themes, responsive layouts, and adjustable density.
+- A calm motion system: a sliding navigation highlight, gentle page transitions, chart reveals, table row stagger, a calendar month glide, and toast timers. All motion stops when your system or Settings asks for reduced motion.
 - Optional local change journal and baseline snapshots.
 
 ## Data safety and privacy
@@ -44,7 +53,7 @@ Make a full JSON backup before replacing the application file, and keep a second
 | Path | Purpose |
 |---|---|
 | [`index.html`](index.html) | Canonical hosted entry point (for example, GitHub Pages). |
-| [`Ledgerbook_Enhanced_v1.7.1.html`](Ledgerbook_Enhanced_v1.7.1.html) | Version-labelled download for release 1.7.1. It must remain byte-for-byte identical to [`index.html`](index.html). |
+| [`Ledgerbook_Enhanced_v1.9.0.html`](Ledgerbook_Enhanced_v1.9.0.html) | Version-labelled download for release 1.9.0. It must remain byte-for-byte identical to [`index.html`](index.html). |
 | [`scripts/verify-release.mjs`](scripts/verify-release.mjs) | Dependency-free check for version and release-file consistency. |
 | [`.github/workflows/verify.yml`](.github/workflows/verify.yml) | Runs the release consistency check on pushes and pull requests. |
 | [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) | Project layout and release-maintenance notes. |

@@ -1,0 +1,16 @@
+# LedgerBook local finance data. Never commit real records or exports.
+Ledgerbook_Autosave_Log.jsonl
+Ledgerbook_Baseline_*.json
+Ledgerbook_Backup_*.json
+Ledgerbook_Export_*.csv
+Ledgerbook_Export_*.json
+
+# Local editor and operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+
+# Node diagnostics, should a local verification tool ever need dependencies
+npm-debug.log*
